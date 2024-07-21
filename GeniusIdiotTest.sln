@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35027.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeniusIdiotTest", "GeniusIdiotTest\GeniusIdiotTest.csproj", "{3731A31A-3BB6-414A-9A2C-9FCE0A63619F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3731A31A-3BB6-414A-9A2C-9FCE0A63619F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3731A31A-3BB6-414A-9A2C-9FCE0A63619F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3731A31A-3BB6-414A-9A2C-9FCE0A63619F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3731A31A-3BB6-414A-9A2C-9FCE0A63619F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C56D5F1D-F0CD-4C42-94D9-681CE34AA70B}
+	EndGlobalSection
+EndGlobal
