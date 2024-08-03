@@ -1,125 +1,154 @@
-﻿using System;
+﻿using Microsoft.SqlServer.Server;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace GeniusIdiotTest
+namespace GeniusIdiot
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            string[] questions = GetQuestion();
-            int[] answers = GetAnswer();
-            string[] diagnoses = GetDiagnoses();
-
             Random random = new Random();
             Console.WriteLine("Введите имя:");
             var userName = Console.ReadLine();
+            User user = new User(userName);
 
             while (true)
             {
-                bool[] isQuestionAsked = isQuestionAskedStartValue(questions.Length);
+                List<Question> questions = QuestionStorage.GetAll();
 
-                var countRightAnswers = 0;
                 for (int i = 0; i < 5; i++)
                 {
-                    var randomQuestionIndex = random.Next(0, questions.Length);
-                    while (isQuestionAsked[randomQuestionIndex])
+                    var randomQuestionIndex = random.Next(0, questions.Count);
+                    while (questions[randomQuestionIndex].WasAsked)
                     {
-                        randomQuestionIndex = random.Next(0, questions.Length);
+                        randomQuestionIndex = random.Next(0, questions.Count);
                     }
 
-                    Console.WriteLine(questions[randomQuestionIndex]);
+                    Console.WriteLine(questions[randomQuestionIndex].Text);
 
                     int userAnswer = GetUserAnswer();
-                    isQuestionAsked[randomQuestionIndex] = true;
+                    questions[randomQuestionIndex].WasAsked = true;
 
-                    if (userAnswer == answers[randomQuestionIndex])
+                    if (userAnswer == questions[randomQuestionIndex].Answer)
                     {
-                        countRightAnswers++;
+                        user.countRightAnswer++;
                     }
 
                 }
 
-                Console.WriteLine(userName + ", Вы " + diagnoses[DiagnosesIndex(countRightAnswers, 5)]);
-                SaveUserResults(userName, diagnoses[DiagnosesIndex(countRightAnswers, 5)]);
+                user.Diagnose = DiagnoseStorage.GetDiagnoses(user.countRightAnswer, 5);
+                Console.WriteLine(userName + ", Вы " + user.Diagnose);
+                UsersResultStorage.addResult(user);
 
                 Console.WriteLine("Хотите ли Вы посмотреть предыдущие результаты?");
                 if (GetUserChoice())
                 {
-                    ShowUserResults();
+                    UsersResultStorage.printResults();
                 }
+
+                while (true)
+                {
+                    Console.WriteLine("Хотите ли Вы добавить вопрос?");
+                    if (GetUserChoice())
+                    {
+                        Console.WriteLine("Введите текст вопроса");
+                        string text = GetUserText();
+                        Console.WriteLine("Введите ответ на вопрос");
+                        int answer = GetUserAnswer();
+                        Question question = new Question(text, answer);
+                        QuestionStorage.Add(question);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                while (true)
+                {
+                    Console.WriteLine("Хотите ли Вы удалить вопрос?");
+                    if (GetUserChoice())
+                    {
+                        for(int i = 0; i < questions.Count; i++)
+                        {
+                            Console.WriteLine((i+1) + ") " + questions[i].Text);
+                        }
+                        while (true)
+                        {
+                            Console.WriteLine("Введите номер вопроса, который хотите удалить");
+                            int indexQuestion = GetUserIndex(questions.Count) - 1;
+                            QuestionStorage.DeleteQuestion(questions, indexQuestion);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
 
                 Console.WriteLine("Хотите попробовать пройти тест снова?");
                 if (!GetUserChoice())
                 {
                     break;
                 }
-                
-                
+
+
 
             }
 
-            
+
 
 
         }
 
-        private static void ShowUserResults()
+        private static int GetUserIndex(int maxIndex)
         {
-            var value = GetValue("userResults.txt").Split('!');
-            Console.WriteLine();
-            foreach(var item in value)
+            int index;
+            while (true)
             {
-                if(item.Length == 0)
+                try
                 {
-                    break;
+                    index = Convert.ToInt32(Console.ReadLine());
+                    if (index <= maxIndex)
+                    {
+                        break;
+                    }
+                    Console.WriteLine("Введите число в диапозоне от 1 до " + maxIndex);
                 }
-                var line = item.Split('#');
-                var name = line[0];
-                var diagnose = line[1];
-                Console.WriteLine(name + " " + diagnose);
+                catch (OverflowException)
+                {
+                    Console.WriteLine("Введите число в диапозоне от 1 до " + maxIndex);
+                }
+                catch (FormatException)
+                {
+                    Console.WriteLine("Введите число");
+                }
+            }
+            return index;
+        }
+
+        private static string GetUserText()
+        {
+            while (true)
+            {
+                string text = Console.ReadLine().ToLower();
+                if (text[text.Length-1] == '?')
+                {
+                    return text;
+                }
+
+                Console.WriteLine("Введите корректный текст вопроса");
             }
         }
 
-        private static string GetValue(string fileName)
-        {
-            var reader = new StreamReader(fileName, Encoding.UTF8);
-            var value = reader.ReadLine();
-            reader.Close();
-            return value;
-        }
-
-        private static void SaveUserResults(string name, string diagnose)
-        {
-            var value = $"{name}#{diagnose}!";
-            AppendToFile("userResults.txt", value);
-        }
-
-        private static void AppendToFile(string fileName, string value)
-        {
-            var writer = new StreamWriter(fileName, true, Encoding.UTF8);
-            writer.Write(value);
-            writer.Close();
-        }
-
-        private static int DiagnosesIndex(int countRightAnswers, int questions)
-        {
-            int percent = countRightAnswers * 100 / questions;
-
-            if (percent < 20) { return 0; }
-            else if (percent < 40) { return 1; }
-            else if (percent < 60) { return 2; }
-            else if (percent < 80) { return 3; }
-            else if (percent < 90) { return 4; }
-            else { return 5; }
-
-        }
+        
 
         private static bool GetUserChoice()
         {
@@ -159,58 +188,6 @@ namespace GeniusIdiotTest
             }
             return userAnswer;
         }
-        private static bool[] isQuestionAskedStartValue(int length)
-        {
-            bool[] isQuestionAsked = new bool[length];
 
-            for (int i = 0; i < length; i++)
-            {
-                isQuestionAsked[i] = false;
-            }
-
-            return isQuestionAsked;
-        }
-
-        private static string[] GetDiagnoses()
-        {
-            string[] diagnoses = new string[6];
-
-            diagnoses[0] = "кретин";
-            diagnoses[1] = "идиот";
-            diagnoses[2] = "дурак";
-            diagnoses[3] = "нормальный";
-            diagnoses[4] = "талант";
-            diagnoses[5] = "гений";
-
-            return diagnoses;
-        }
-
-        private static int[] GetAnswer()
-        {
-            int[] answers = new int[6];
-
-            answers[0] = 6;
-            answers[1] = 9;
-            answers[2] = 25;
-            answers[3] = 60;
-            answers[4] = 2;
-            answers[5] = 12;
-
-            return answers;
-        }
-
-        private static string[] GetQuestion()
-        {
-            string[] questions = new string[6];
-
-            questions[0] = "Сколько будет два плюс два умножить на два?";
-            questions[1] = "Бревно нужно распилить на 10 частей. Сколько распилов нужно сделать?";
-            questions[2] = "На двух руках десять пальцев. Сколько пальцев на пяти руках?";
-            questions[3] = "Укол делают каждые полчаса. Сколько нужно минут, чтобы сделать три укола?";
-            questions[4] = "Пять свечей горело, две потухли. Сколько свечей осталось?";
-            questions[5] = "Сколько месяцев в году имеют 28 дней?";
-
-            return questions;
-        }
     }
 }
